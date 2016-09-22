@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'mainWindow.ui'
 #
-# Created: Wed Sep 21 15:56:43 2016
+# Created: Thu Sep 22 18:51:20 2016
 #      by: pyside-uic 0.2.15 running on PySide 1.2.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -12,7 +12,7 @@ from PySide import QtCore, QtGui
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(742, 841)
+        MainWindow.resize(979, 903)
         self.centralwidget = QtGui.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.horizontalLayout = QtGui.QHBoxLayout(self.centralwidget)
@@ -92,7 +92,7 @@ class Ui_MainWindow(object):
         self.taskLabel.setText(QtGui.QApplication.translate("MainWindow", "Current Tasks", None, QtGui.QApplication.UnicodeUTF8))
         self.taskTable.horizontalHeaderItem(0).setText(QtGui.QApplication.translate("MainWindow", "Entity", None, QtGui.QApplication.UnicodeUTF8))
         self.taskTable.horizontalHeaderItem(1).setText(QtGui.QApplication.translate("MainWindow", "Name", None, QtGui.QApplication.UnicodeUTF8))
-        self.taskTable.horizontalHeaderItem(2).setText(QtGui.QApplication.translate("MainWindow", "Task", None, QtGui.QApplication.UnicodeUTF8))
+        self.taskTable.horizontalHeaderItem(2).setText(QtGui.QApplication.translate("MainWindow", "Task Name", None, QtGui.QApplication.UnicodeUTF8))
         self.taskTable.horizontalHeaderItem(3).setText(QtGui.QApplication.translate("MainWindow", "Status", None, QtGui.QApplication.UnicodeUTF8))
         self.taskTable.horizontalHeaderItem(4).setText(QtGui.QApplication.translate("MainWindow", "Priority", None, QtGui.QApplication.UnicodeUTF8))
         self.taskTable.horizontalHeaderItem(5).setText(QtGui.QApplication.translate("MainWindow", "DaysLeft", None, QtGui.QApplication.UnicodeUTF8))
