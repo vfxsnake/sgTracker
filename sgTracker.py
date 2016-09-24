@@ -1,6 +1,6 @@
 import sys
 import os.path as path
-
+import os
 import datetime
 
 from PySide import QtGui
@@ -29,6 +29,7 @@ class ShotgunUtils():
         self.sg = Shotgun(SERVER_PATH, SCRIPT_NAME, SCRIPT_KEY)
         self.userId = None
         self.tasks = None
+        self.projectPath = None
 
     def getsgParameters(self, sgType, parameter=None):
         schema = self.sg.schema_field_read(sgType, parameter)
@@ -37,12 +38,15 @@ class ShotgunUtils():
     def getUserId(self, userName):
 
         filters = [['name', 'is', userName]]
-        field = ['id', 'name']
+        field = ['id', 'name', 'sg_projectpath']
 
-        user = self.sg.find_one('HumanUser', filters)
+        user = self.sg.find_one('HumanUser', filters, field)
 
         if user:
             self.userId = user['id']
+            self.projectPath = user['sg_projectpath']
+            print user['sg_projectpath']
+
             return user['id']
 
         else:
@@ -58,7 +62,10 @@ class ShotgunUtils():
 
             fields = ['id']
 
-            taskList = self.sg.find('Task', filter, fields)
+            order = [{'field_name': 'due_date', 'direction': 'asc'}, {'field_name': 'sg_priority_1', 'direction':'asc'},
+                     {'field_name': 'sg_complexity', 'direction': 'desc'}]
+
+            taskList = self.sg.find('Task', filter, fields, order)
 
             if taskList:
                 self.tasks = taskList
@@ -83,7 +90,7 @@ class ShotgunUtils():
         filter = [['id', 'is', taskId]]
 
         fields = ['id', 'content', 'sg_status_list', 'start_date', 'due_date', 'sg_complexity',
-                  'sg_priority_1', 'sg_note', 'project', 'entity', 'sg_digitalmedia', 'sg_attachment']
+                  'sg_priority_1', 'sg_note', 'project', 'entity', 'sg_digitalmedia', 'sg_displayname']
 
         task = self.sg.find_one('Task', filter, fields)
 
@@ -114,19 +121,31 @@ class ShotgunUtils():
             print 'No task by this id'
             return None
 
-    def getNote(self, sgId):
+    def updateProjectPath(self, projectPath):
 
-        filter = [['id', 'is', sgId]]
-        fields = ['content']
-        note = self.sg.find_one('Note', filter, fields)
-        if note:
-            return note['content']
+        data = {'sg_projectpath': projectPath}
+
+        self.sg.update('HumanUser', self.userId, data)
+
+    def getNotes(self, sgTaskId):
+
+        task = self.getTaskById(sgTaskId)
+
+        filters = [['tasks', 'is', task]]
+        fields = ['content', 'created_at', 'user', 'addressings_to']
+        order = [{'field_name': 'created_at', 'direction': 'asc'}]
+
+        notes = self.sg.find('Note', filters, fields, order)
+
+        if notes:
+
+            return notes
 
         else:
             print 'no note'
-            return 'no note'
+            return None
 
-    def updateNote(self, sgId, content):
+    def createNote(self, sgId, content):
 
         filter = [['id', 'is', sgId]]
         fields = ['content', 'project']
@@ -141,9 +160,9 @@ class ShotgunUtils():
             print 'no note'
             return 'no note'
 
-    def uploadAttachment(self, taskId, filePath):
+    def uploadAttachment(self, taskId, filePath, tag):
 
-        task  = self.getTaskById(taskId)
+        task = self.getTaskById(taskId)
 
         if task:
 
@@ -156,13 +175,14 @@ class ShotgunUtils():
                 uploadedfile = self.sg.upload(entityType, entityId, filePath)
 
                 if uploadedfile:
-
-                    data = {'sg_file': {'type': 'Attachment', 'id': uploadedfile}}
-
-                    self.sg.update(entityType, entityId, data)
+                    data = {'sg_taskid': task['id'], 'sg_type': tag}
+                    self.sg.update('Attachment', uploadedfile, data)
                     return uploadedfile
+                else:
+                    return None
             else:
                 print 'no entity set'
+                return None
 
     def downloadAttachment(self, taskId, downloadPath):
 
@@ -178,6 +198,9 @@ class ShotgunUtils():
 
         else:
             print 'no task found'
+
+    def findAttachments(self):
+        pass
 
 class sgLoging(QtGui.QDialog):
 
@@ -245,10 +268,24 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
         self.docUtils.setFeatures(QtGui.QDockWidget.DockWidgetFloatable | QtGui.QDockWidget.DockWidgetMovable)
         self.docUtils.setAllowedAreas(QtCore.Qt.RightDockWidgetArea)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.docUtils)
+
+        ''' disble buttons'''
+        self.docUtils.setProjectButton.setDisabled(True)
+        self.docUtils.downloadButton.setDisabled(True)
+        self.docUtils.replayButton.setDisabled(True)
+        self.docUtils.attachButton.setDisabled(True)
+        self.inprogressButton.setDisabled(True)
+        self.apprubalButton.setDisabled(True)
+        self.updateButton.setDisabled(True)
+
+        self.docUtils.NoteTextEdit.setReadOnly(True)
+
+        ''' show window'''
         self.show()
 
         self.sgUtils = ShotgunUtils()
 
+        self.projectPath = None
 
         ''' button conection'''
 
@@ -256,6 +293,15 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
         self.loginButton.clicked.connect(self.logIn)
         self.inprogressButton.clicked.connect(self.setInProgress)
         self.apprubalButton.clicked.connect(self.submitApproval)
+        self.docUtils.setProjectButton.clicked.connect(self.setProject)
+
+        '''Qtable change selection signal'''
+        model = self.taskTable.selectionModel()
+        model.selectionChanged.connect(self.clearNote)
+
+        '''qtable vertical header nonection'''
+
+        self.taskTable.verticalHeader().sectionClicked.connect(self.displayNotes)
 
     def task2Table(self):
 
@@ -279,7 +325,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                     entity = currentTask['entity']
                     entityType = QtGui.QTableWidgetItem(entity['type'])
                     entityName = QtGui.QTableWidgetItem(entity['name'])
-                    taskName = QtGui.QTableWidgetItem(currentTask['content'])
+                    taskName = QtGui.QTableWidgetItem(currentTask['sg_displayname'])
                     status = QtGui.QTableWidgetItem(currentTask['sg_status_list'])
                     priority = QtGui.QTableWidgetItem(currentTask['sg_priority_1'])
                     endDate = QtGui.QTableWidgetItem(currentTask['due_date'])
@@ -316,10 +362,11 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
         selection = self.taskTable.selectedItems()
         if len(selection) > 1:
-            msgBox = QtGui.QMessageBox()
-            msgBox.setWindowTitle('Warning')
-            msgBox.setText('select just one status Cell')
-            msgBox.exec_()
+
+            self.messageBox('Warning', 'select One status Cell')
+
+        if not selection:
+            self.messageBox('Warning', 'select One status Cell')
 
         else:
 
@@ -327,28 +374,45 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                 row = select.row()
                 status = self.taskTable.item(row, 3)
 
-                if not status.text() == 'hld' or select.text() == 'fin':
+                if not (status.text() == 'hld' or select.text() == 'fin' or select.text() == 'ip'):
 
 
                     cell = self.taskTable.item(row, 8)
+                    if status.text() == 'app':
 
+                        msgBox = QtGui.QMessageBox()
+                        msgBox.setParent(self)
+                        msgBox.setStyleSheet('background-color : lightgrey')
+                        msgBox.setText("The task has been submitted for Approval.")
+                        msgBox.setInformativeText("Do you want to set to Inprogres?")
+                        msgBox.setStandardButtons(QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel)
+                        msgBox.setDefaultButton(QtGui.QMessageBox.Cancel)
+                        ret = msgBox.exec_()
 
-                    self.sgUtils.updateStatusFromUser(int(cell.text()), 'ip')
+                        if ret == QtGui.QMessageBox.Yes:
+                            self.sgUtils.updateStatusFromUser(int(cell.text()), 'ip')
+
+                        else:
+                            pass
+
+                    else:
+                        self.sgUtils.updateStatusFromUser(int(cell.text()), 'ip')
 
                 else:
                     pass
 
-            self.task2Table()
+                self.task2Table()
 
     def submitApproval(self):
 
         selection = self.taskTable.selectedItems()
 
         if len(selection) > 1:
-            msgBox = QtGui.QMessageBox()
-            msgBox.setWindowTitle('Warning')
-            msgBox.setText('select just one status Cell')
-            msgBox.exec_()
+            self.messageBox('Warning', 'select One status Cell')
+
+        if not selection:
+
+            self.messageBox('Warning', 'select One status Cell')
 
         else:
 
@@ -356,28 +420,92 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                 row = select.row()
                 status = self.taskTable.item(row, 3)
 
-                if not status.text() == 'hld' or select.text() == 'fin':
+                if status.text() == 'ip' or select.text() == 'app':
 
                     cell = self.taskTable.item(row, 8)
+                    attachment = None
+
+                    if status.text() == 'app':
+                        msgBox = QtGui.QMessageBox()
+                        text = "the task has been submitted for Aproval. " \
+                               "If you want to add more Atachmentes select the files, if not close the browser."
+
+                        self.messageBox('Warning', text)
 
 
-                    fname , x = QtGui.QFileDialog.getOpenFileName(self, 'Open file', '/home')
+                    fname, x = QtGui.QFileDialog.getOpenFileNames(self, 'Open file', self.sgUtils.projectPath)
 
                     if fname:
 
                         cell = self.taskTable.item(row, 8)
-                        self.sgUtils.updateStatusFromUser(int(cell.text()), 'app')
+
+                        for f in fname:
+
+                            attachment = self.sgUtils.uploadAttachment(int(cell.text()), str(f), 'SUBMIT')
+
+                        if attachment:
+                            self.sgUtils.updateStatusFromUser(int(cell.text()), 'app')
+
+                        else:
+
+                            self.messageBox('Error', 'Fale to upload attachment')
 
                     else:
-                        msgBox = QtGui.QMessageBox()
-                        msgBox.setWindowTitle('Warning')
-                        msgBox.setText('no file selected, please select a file to upload.')
-                        msgBox.exec_()
+
+                        self.messageBox('Error', 'no file selected.')
 
                 else:
-                    pass
+                    self.messageBox('Warnig', 'the status is not In progress')
 
             self.task2Table()
+
+    def setProject(self):
+
+        fname = QtGui.QFileDialog.getExistingDirectory()
+
+        if fname:
+
+            self.projectStructure(fname)
+            self.sgUtils.updateProjectPath(self.projectPath)
+            self.inprogressButton.setDisabled(False)
+            self.apprubalButton.setDisabled(False)
+            self.updateButton.setDisabled(False)
+            self.docUtils.setProjectButton.setStyleSheet('background-color : lightgreen')
+            self.docUtils.setProjectButton.setDisabled(True)
+        else:
+
+            self.messageBox('Warnig','No folder Selected')
+
+    def projectStructure(self, userPath):
+
+        dirSize = os.listdir(userPath)
+
+        hcProjectFolder = path.join(userPath, 'HCP_Projects')
+
+        if not path.exists(hcProjectFolder):
+
+            os.mkdir(hcProjectFolder)
+            print 'Project Created'
+        else:
+            print 'Project Allready exist'
+
+        if not path.exists(path.join(hcProjectFolder, 'ASSETS')):
+            os.mkdir(path.join(hcProjectFolder, 'ASSETS'))
+
+            print 'Asset folder Created'
+
+        else:
+            print 'Assets Folder exist'
+
+        if not path.exists(path.join(hcProjectFolder, 'SHOTS')):
+            os.mkdir(path.join(hcProjectFolder, 'SHOTS'))
+
+            print 'SHOTS folder Created'
+
+        else:
+            print 'SHOTS Folder exist'
+
+        self.projectPath = hcProjectFolder
 
     def colorFromDate(self, sgdue):
 
@@ -491,40 +619,92 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
     def setFlags(self):
 
         self.taskTable.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
-        self.taskTable.setSortingEnabled(True)
+        self.taskTable.setSortingEnabled(False)
         self.setStyleSheet('background-color: darkgray;')
+        self.docUtils.NoteTextEdit.setFontPointSize(12)
 
 
     def logIn(self):
 
         credencials = sgLoging(self)
+        if credencials.userName:
+            self.sgUtils.getUserId(credencials.userName)
+            self.sgUtils.taskByUser()
 
-        self.sgUtils.getUserId(credencials.userName)
-        self.sgUtils.taskByUser()
+            self.task2Table()
+            self.loginButton.setText('logged as : {0}'.format(credencials.userName))
+            self.loginButton.setStyleSheet('background-color : lightgreen')
 
-        self.task2Table()
-        self.loginButton.setText('logged as : {0}'.format(credencials.userName))
-        self.loginButton.setStyleSheet('background-color : lightgreen')
-        self.loginButton.setDisabled(True)
+            self.loginButton.setDisabled(True)
 
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        font.setBold(True)
+            '''enable buttons'''
+            self.docUtils.setProjectButton.setDisabled(False)
+            self.docUtils.downloadButton.setDisabled(False)
+            self.docUtils.replayButton.setDisabled(False)
+            self.docUtils.attachButton.setDisabled(False)
+            font = QtGui.QFont()
+            font.setPointSize(10)
+            font.setBold(True)
 
-        self.loginButton.setFont(font)
+            self.loginButton.setFont(font)
 
+            if self.sgUtils.projectPath:
+                self.docUtils.setProjectButton.setDisabled(True)
+                self.docUtils.setProjectButton.setStyleSheet('background-color : lightgreen')
+                self.inprogressButton.setDisabled(False)
+                self.apprubalButton.setDisabled(False)
+                self.updateButton.setDisabled(False)
+
+
+        else:
+            pass
+
+    def displayNotes(self, taskIndex):
+
+        self.docUtils.NoteTextEdit.clear()
+
+        row = taskIndex
+
+        item = self.taskTable.item(row, 8)
+
+        notes = self.sgUtils.getNotes(int(item.text()))
+
+        if notes:
+            for note in notes:
+                self.docUtils.NoteTextEdit.setTextColor('red')
+                self.docUtils.NoteTextEdit.append(note['user']['name'])
+                self.docUtils.NoteTextEdit.append(note['created_at'].isoformat())
+                self.docUtils.NoteTextEdit.setTextColor('black')
+                self.docUtils.NoteTextEdit.append(note['content'])
+                self.docUtils.NoteTextEdit.append('')
+                self.docUtils.NoteTextEdit.append('')
+
+        else:
+            text = 'no notes'
+            self.docUtils.NoteTextEdit.append(text)
+
+
+    def messageBox(self, mode, text):
+
+        msgBox = QtGui.QMessageBox()
+        msgBox.setParent(self)
+        msgBox.setStyleSheet('background-color : lightgrey')
+        msgBox.setWindowTitle(mode)
+        msgBox.setText(text)
+        msgBox.exec_()
+
+    def clearNote(self):
+
+        self.docUtils.NoteTextEdit.clear()
 
 def main():
     app = QtGui.QApplication(sys.argv)
     ex = sgTracker()
     ex.setFlags()
-    #ex.task2Table()
-
     sys.exit(app.exec_())
 
 
 if __name__ == '__main__':
     main()
-
 
 
