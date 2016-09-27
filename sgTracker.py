@@ -9,6 +9,7 @@ from PySide import QtCore
 from mainWindow import Ui_MainWindow
 from utility_notes import Ui_DockWidget as uiDocNotes
 from loginDialog import Ui_Dialog
+from notesDialog import Ui_Dialog as NoteDialog
 from shotgun_api3 import Shotgun
 
 class ShotgunUtils():
@@ -28,6 +29,7 @@ class ShotgunUtils():
 
         self.sg = Shotgun(SERVER_PATH, SCRIPT_NAME, SCRIPT_KEY)
         self.userId = None
+        self.userDic = {}
         self.tasks = None
         self.projectPath = None
 
@@ -45,7 +47,7 @@ class ShotgunUtils():
         if user:
             self.userId = user['id']
             self.projectPath = user['sg_projectpath']
-            print user['sg_projectpath']
+            self.userDic = user
 
             return user['id']
 
@@ -130,35 +132,33 @@ class ShotgunUtils():
     def getNotes(self, sgTaskId):
 
         task = self.getTaskById(sgTaskId)
+        if task:
+            filters = [['tasks', 'is', task]]
+            fields = ['content', 'created_at', 'user', 'addressings_to']
+            order = [{'field_name': 'created_at', 'direction': 'asc'}]
 
-        filters = [['tasks', 'is', task]]
-        fields = ['content', 'created_at', 'user', 'addressings_to']
-        order = [{'field_name': 'created_at', 'direction': 'asc'}]
-
-        notes = self.sg.find('Note', filters, fields, order)
-
-        if notes:
+            notes = self.sg.find('Note', filters, fields, order)
 
             return notes
 
         else:
-            print 'no note'
+            print 'no Task'
             return None
 
-    def createNote(self, sgId, content):
+    def createNote(self, taskId, content):
 
-        filter = [['id', 'is', sgId]]
-        fields = ['content', 'project']
-        note = self.sg.find_one('Note', filter, fields)
-        if note:
-            project = note['project']
-            data = {'project': project, 'content': content}
+        task = self.getTaskById(taskId)
 
-            return note['content']
+        if task:
+
+            data = {'project': task['project'],
+                    'content': content, 'tasks': [task], 'user': self.userDic}
+
+            note = self.sg.create('Note', data)
+            return note['id']
 
         else:
-            print 'no note'
-            return 'no note'
+            return None
 
     def uploadAttachment(self, taskId, filePath, tag):
 
@@ -175,7 +175,7 @@ class ShotgunUtils():
                 uploadedfile = self.sg.upload(entityType, entityId, filePath)
 
                 if uploadedfile:
-                    data = {'sg_taskid': task['id'], 'sg_type': tag}
+                    data = {'sg_type': tag, 'sg_taskid': taskId}
                     self.sg.update('Attachment', uploadedfile, data)
                     return uploadedfile
                 else:
@@ -186,21 +186,29 @@ class ShotgunUtils():
 
     def downloadAttachment(self, taskId, downloadPath):
 
-        task = self.getTaskById(taskId)
+        filters = [['sg_taskid', 'is', taskId]]
+        fields = ['id']
+        attachments = self.sg.find('Attanchment', filters, fields)
 
-        if task:
+        if attachments:
+            for attach in attachments:
+                    dwFile = self.sg.download_attachment(True, downloadPath, attach['id'])
+        else:
+            print 'no attach found'
 
-            for attach in task['sg_attachment']:
 
-                filePath = path.join( downloadPath,'{0}'.format(attach['name']))
-                self.sg.download_attachment(attach, filePath)
-                print 'fileDownloaded'
+    def uploadReference(self, entityType, entityId, filePath, tag):
+
+        uploadedfile = self.sg.upload(entityType, entityId, filePath)
+
+        if uploadedfile:
+            data = {'sg_type': tag}
+            self.sg.update('Attachment', uploadedfile, data)
+
+            return uploadedfile
 
         else:
-            print 'no task found'
-
-    def findAttachments(self):
-        pass
+            return None
 
 class sgLoging(QtGui.QDialog):
 
@@ -258,6 +266,20 @@ class notesDocable(QtGui.QDockWidget, uiDocNotes):
         self.setWindowTitle('Utilities')
         self.show()
 
+class noteCreateDialog(QtGui.QDialog):
+
+    def __init__(self, parent=None):
+        super(noteCreateDialog, self).__init__(parent)
+        self.ui = NoteDialog()
+        self.ui.setupUi(self)
+        self.noteText = None
+        self.exec_()
+
+    def accept(self):
+        self.noteText = self.ui.NoteTextEdit.toPlainText()
+        self.close()
+
+
 class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
     def __init__(self):
@@ -271,12 +293,13 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
         ''' disble buttons'''
         self.docUtils.setProjectButton.setDisabled(True)
-        self.docUtils.downloadButton.setDisabled(True)
         self.docUtils.replayButton.setDisabled(True)
         self.docUtils.attachButton.setDisabled(True)
+        self.docUtils.downloadButton.setDisabled(True)
         self.inprogressButton.setDisabled(True)
         self.apprubalButton.setDisabled(True)
         self.updateButton.setDisabled(True)
+
 
         self.docUtils.NoteTextEdit.setReadOnly(True)
 
@@ -294,12 +317,14 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
         self.inprogressButton.clicked.connect(self.setInProgress)
         self.apprubalButton.clicked.connect(self.submitApproval)
         self.docUtils.setProjectButton.clicked.connect(self.setProject)
+        self.docUtils.replayButton.clicked.connect(self.replayNote)
+        self.docUtils.attachButton.clicked.connect(self.uploadAttachments)
 
         '''Qtable change selection signal'''
         model = self.taskTable.selectionModel()
         model.selectionChanged.connect(self.clearNote)
 
-        '''qtable vertical header nonection'''
+        '''qtable vertical header conection'''
 
         self.taskTable.verticalHeader().sectionClicked.connect(self.displayNotes)
 
@@ -623,7 +648,6 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
         self.setStyleSheet('background-color: darkgray;')
         self.docUtils.NoteTextEdit.setFontPointSize(12)
 
-
     def logIn(self):
 
         credencials = sgLoging(self)
@@ -639,9 +663,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
             '''enable buttons'''
             self.docUtils.setProjectButton.setDisabled(False)
-            self.docUtils.downloadButton.setDisabled(False)
-            self.docUtils.replayButton.setDisabled(False)
-            self.docUtils.attachButton.setDisabled(False)
+
             font = QtGui.QFont()
             font.setPointSize(10)
             font.setBold(True)
@@ -663,6 +685,10 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
         self.docUtils.NoteTextEdit.clear()
 
+        self.docUtils.replayButton.setDisabled(False)
+        self.docUtils.attachButton.setDisabled(False)
+        self.docUtils.downloadButton.setDisabled(False)
+
         row = taskIndex
 
         item = self.taskTable.item(row, 8)
@@ -671,18 +697,51 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
         if notes:
             for note in notes:
-                self.docUtils.NoteTextEdit.setTextColor('red')
-                self.docUtils.NoteTextEdit.append(note['user']['name'])
-                self.docUtils.NoteTextEdit.append(note['created_at'].isoformat())
-                self.docUtils.NoteTextEdit.setTextColor('black')
-                self.docUtils.NoteTextEdit.append(note['content'])
-                self.docUtils.NoteTextEdit.append('')
-                self.docUtils.NoteTextEdit.append('')
+                if not note['user']['name'] == self.sgUtils.userDic['name']:
+                    self.docUtils.NoteTextEdit.setTextColor('red')
+                    self.docUtils.NoteTextEdit.append(note['user']['name'])
+                    self.docUtils.NoteTextEdit.append(note['created_at'].isoformat())
+                    self.docUtils.NoteTextEdit.setTextColor('black')
+                    self.docUtils.NoteTextEdit.append(note['content'])
+                    self.docUtils.NoteTextEdit.append('')
+                    self.docUtils.NoteTextEdit.append('')
+
+                else:
+                    self.docUtils.NoteTextEdit.setTextColor('blue')
+                    self.docUtils.NoteTextEdit.append(note['user']['name'])
+                    self.docUtils.NoteTextEdit.append(note['created_at'].isoformat())
+                    self.docUtils.NoteTextEdit.setTextColor('black')
+                    self.docUtils.NoteTextEdit.append(note['content'])
+                    self.docUtils.NoteTextEdit.append('')
+                    self.docUtils.NoteTextEdit.append('')
 
         else:
             text = 'no notes'
             self.docUtils.NoteTextEdit.append(text)
 
+    def replayNote(self):
+
+        noteReplay = noteCreateDialog(self)
+
+        if noteReplay.noteText:
+            rows = self.taskTable.selectionModel().selectedRows()
+
+            if len(rows) == 1:
+
+                for row in rows:
+
+                    index = row.row()
+
+                    task = self.taskTable.item(index, 8)
+
+                    taskId = int(task.text())
+
+                self.sgUtils.createNote(taskId, noteReplay.noteText)
+
+                self.displayNotes(index)
+
+            else:
+                warning = self.messageBox('Warning', 'Please Select a row')
 
     def messageBox(self, mode, text):
 
@@ -696,6 +755,42 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
     def clearNote(self):
 
         self.docUtils.NoteTextEdit.clear()
+        self.docUtils.replayButton.setDisabled(True)
+        self.docUtils.attachButton.setDisabled(True)
+        self.docUtils.downloadButton.setDisabled(True)
+
+    def uploadAttachments(self):
+
+        rows = self.taskTable.selectionModel().selectedRows()
+
+        if len(rows) == 1:
+
+            for row in rows:
+
+                index = row.row()
+
+                taskId = self.taskTable.item(index, 8)
+
+                notes = self.sgUtils.getNotes(int(taskId.text()))
+
+                lastNote = notes[-1]
+
+                fname, x = QtGui.QFileDialog.getOpenFileNames(self, 'Open file', self.sgUtils.projectPath)
+
+                if fname:
+                    for f in fname:
+
+                        attachment = self.sgUtils.uploadReference(lastNote['type'], lastNote['id'], f, 'REFERENCE')
+
+                        if not attachment:
+                            self.messageBox('Error', 'Fale to upload attachment')
+
+    def checpath(self, tableItem):
+
+        if self.projectPath:
+            project = self.projectPath
+
+
 
 def main():
     app = QtGui.QApplication(sys.argv)
