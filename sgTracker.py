@@ -247,13 +247,13 @@ class sgLoging(QtGui.QDialog):
                 self.close()
 
             else:
-                msgBox = QtGui.QMessageBox()
+                msgBox = QtGui.QMessageBox(self)
                 msgBox.setWindowTitle('Login Fail')
                 msgBox.setText('Incorrect Password')
                 msgBox.exec_()
 
         else:
-            msgBox = QtGui.QMessageBox()
+            msgBox = QtGui.QMessageBox(self)
             msgBox.setWindowTitle('Login Fail')
             msgBox.setText('No user by this mame: {0}'.format(user))
             msgBox.exec_()
@@ -322,7 +322,10 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
 
         self.docUtils.NoteTextEdit.setReadOnly(True)
-
+        '''timer'''
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.colorUpdate)
+        self.timer.setInterval(300000)
         ''' show window'''
         self.show()
 
@@ -399,6 +402,9 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                     self.taskTable.setItem(x, 6, endDate)
                     self.taskTable.setItem(x, 7, complex)
                     self.taskTable.setItem(x, 8, sgId)
+
+            self.timer.start()
+            self.updateButton.setStyleSheet('background-color : lightgreen')
 
         else:
 
@@ -646,6 +652,10 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
             color = QtGui.QColor('white')
 
         return color
+
+    def colorUpdate(self):
+        self.updateButton.setStyleSheet('background-color : red')
+        self.timer.stop()
 
     def setFlags(self):
 
