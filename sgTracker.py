@@ -61,11 +61,12 @@ class ShotgunUtils():
 
             filter = [['task_assignees', 'is', {'type': 'HumanUser', 'id': self.userId}],
                       ['sg_status_list', 'is_not', 'fin'], ['sg_status_list', 'is_not', 'apr'],
-                      ['sg_status_list', 'is_not', '']]
+                      ['sg_status_list', 'is_not', 'cmpt']]
 
             fields = ['id']
 
-            order = [{'field_name': 'due_date', 'direction': 'asc'}, {'field_name': 'sg_priority_1', 'direction':'asc'},
+            order = [{'field_name': 'due_date', 'direction': 'asc'},
+                     {'field_name': 'sg_priority_1', 'direction': 'asc'},
                      {'field_name': 'sg_complexity', 'direction': 'desc'}]
 
             taskList = self.sg.find('Task', filter, fields, order)
@@ -408,7 +409,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
             self.updateButton.setStyleSheet('background-color : lightgreen')
 
         else:
-
+            self.messageBox('Warning', 'No Task Assigned jet')
             self.taskTable.setRowCount(0)
 
     def setInProgress(self):
