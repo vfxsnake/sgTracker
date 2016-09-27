@@ -40,7 +40,7 @@ class ShotgunUtils():
     def getUserId(self, userName):
 
         filters = [['name', 'is', userName]]
-        field = ['id', 'name', 'sg_projectpath']
+        field = ['id', 'name', 'sg_projectpath', 'sg_keyword']
 
         user = self.sg.find_one('HumanUser', filters, field)
 
@@ -186,23 +186,35 @@ class ShotgunUtils():
 
     def downloadAttachment(self, taskId, downloadPath):
 
-        filters = [['sg_taskid', 'is', taskId]]
-        fields = ['id']
-        attachments = self.sg.find('Attanchment', filters, fields)
+        filters = [['sg_taskid', 'is', taskId], ['sg_type', 'is', 'REFERENCE']]
+        fields = ['id', 'attachment_links', 'filename', 'created_at']
+        attachments = self.sg.find('Attachment', filters, fields)
 
         if attachments:
-            for attach in attachments:
-                    dwFile = self.sg.download_attachment(True, downloadPath, attach['id'])
+            for x, attach in enumerate(attachments):
+
+
+                    extension = path.splitext(attach['filename'])
+                    dt = attach['created_at'].isoformat()
+                    name = attach['attachment_links'][0]['name']
+
+                    namePadded = '{0}_{3}.{1:04d}{2}'.format(name, x, extension[-1], dt)
+
+                    fullPath = path.join(downloadPath, namePadded)
+
+                    dwFile = self.sg.download_attachment(attach, fullPath, attach['id'])
+
+            return attachments
         else:
-            print 'no attach found'
+            return None
 
 
-    def uploadReference(self, entityType, entityId, filePath, tag):
+    def uploadReference(self, entityType, entityId, filePath, tag, taskId):
 
         uploadedfile = self.sg.upload(entityType, entityId, filePath)
 
         if uploadedfile:
-            data = {'sg_type': tag}
+            data = {'sg_type': tag, 'sg_type': 'REFERENCE'}
             self.sg.update('Attachment', uploadedfile, data)
 
             return uploadedfile
@@ -228,7 +240,7 @@ class sgLoging(QtGui.QDialog):
 
             self.userName = user
 
-            if self.validatePassword(passWord):
+            if self.validatePassword(user, passWord):
 
                 self.userPassword = passWord
 
@@ -255,8 +267,16 @@ class sgLoging(QtGui.QDialog):
         else:
             return False
 
-    def validatePassword(self, passWord):
-        return True
+    def validatePassword(self, userName, passWord):
+
+        sgUtils = ShotgunUtils()
+
+        if sgUtils.getUserId(userName):
+            if sgUtils.userDic['sg_keyword'] == passWord:
+                return True
+
+        else:
+            return False
 
 class notesDocable(QtGui.QDockWidget, uiDocNotes):
 
@@ -319,6 +339,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
         self.docUtils.setProjectButton.clicked.connect(self.setProject)
         self.docUtils.replayButton.clicked.connect(self.replayNote)
         self.docUtils.attachButton.clicked.connect(self.uploadAttachments)
+        self.docUtils.downloadButton.clicked.connect(self.downloadReff)
 
         '''Qtable change selection signal'''
         model = self.taskTable.selectionModel()
@@ -422,6 +443,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
                     else:
                         self.sgUtils.updateStatusFromUser(int(cell.text()), 'ip')
+                        self.checkpath(row)
 
                 else:
                     pass
@@ -457,8 +479,8 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
                         self.messageBox('Warning', text)
 
-
-                    fname, x = QtGui.QFileDialog.getOpenFileNames(self, 'Open file', self.sgUtils.projectPath)
+                    taskPath = self.checkpath(row)
+                    fname, x = QtGui.QFileDialog.getOpenFileNames(self, 'Open file', taskPath)
 
                     if fname:
 
@@ -513,22 +535,6 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
             print 'Project Created'
         else:
             print 'Project Allready exist'
-
-        if not path.exists(path.join(hcProjectFolder, 'ASSETS')):
-            os.mkdir(path.join(hcProjectFolder, 'ASSETS'))
-
-            print 'Asset folder Created'
-
-        else:
-            print 'Assets Folder exist'
-
-        if not path.exists(path.join(hcProjectFolder, 'SHOTS')):
-            os.mkdir(path.join(hcProjectFolder, 'SHOTS'))
-
-            print 'SHOTS folder Created'
-
-        else:
-            print 'SHOTS Folder exist'
 
         self.projectPath = hcProjectFolder
 
@@ -651,6 +657,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
     def logIn(self):
 
         credencials = sgLoging(self)
+
         if credencials.userName:
             self.sgUtils.getUserId(credencials.userName)
             self.sgUtils.taskByUser()
@@ -671,6 +678,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
             self.loginButton.setFont(font)
 
             if self.sgUtils.projectPath:
+                self.projectPath = self.sgUtils.projectPath
                 self.docUtils.setProjectButton.setDisabled(True)
                 self.docUtils.setProjectButton.setStyleSheet('background-color : lightgreen')
                 self.inprogressButton.setDisabled(False)
@@ -775,22 +783,106 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
                 lastNote = notes[-1]
 
+                attachPath = self.checkpath()
+
                 fname, x = QtGui.QFileDialog.getOpenFileNames(self, 'Open file', self.sgUtils.projectPath)
 
                 if fname:
                     for f in fname:
 
-                        attachment = self.sgUtils.uploadReference(lastNote['type'], lastNote['id'], f, 'REFERENCE')
+                        attachment = self.sgUtils.uploadReference(lastNote['type'], lastNote['id'], f, 'REFERENCE',
+                                                                  int(taskId.text()))
 
                         if not attachment:
                             self.messageBox('Error', 'Fale to upload attachment')
 
-    def checpath(self, tableItem):
+    def downloadReff(self):
+
+        rows = self.taskTable.selectionModel().selectedRows()
+
+        if len(rows) == 1:
+
+            for row in rows:
+
+                index = row.row()
+
+                taskId = self.taskTable.item(index, 8)
+
+                taskPath = self.checkpath(index)
+                downPath = path.join(taskPath, 'REFERENCES')
+
+                attachs = self.sgUtils.downloadAttachment(int(taskId.text()), downPath)
+
+                if attachs:
+                    self.messageBox('Succes', 'attachments compleated')
+                    return attachs
+
+                else:
+                    self.messageBox('Warning', 'No attachmentes found')
+                    return None
+
+    def checkpath(self, row):
 
         if self.projectPath:
+
+
             project = self.projectPath
 
+            taskId = int(self.taskTable.item(row, 8).text())
+            taskEntity = self.taskTable.item(row, 0).text()
+            taskEntityName = self.taskTable.item(row, 1).text()
+            taskName = self.taskTable.item(row, 2).text()
 
+            sgTask = self.sgUtils.getTaskById(taskId)
+
+
+            sgProject = path.join(project, sgTask['project']['name'])
+            sgEntity = path.join(sgProject, taskEntity)
+            sgEntityName = path.join(sgEntity, taskEntityName)
+            sgTaskName = path.join(sgEntityName, taskName)
+            sgReferences = path.join(sgTaskName, 'REFERENCES')
+            emptyFile = path.join(sgTaskName, sgTask['entity']['name'])
+
+            if not path.exists(project):
+                os.mkdir(project)
+
+            else:
+                pass
+
+            if not path.exists(sgProject):
+                os.mkdir(sgProject)
+
+            else:
+                pass
+
+            if not path.exists(sgEntity):
+                os.mkdir(sgEntity)
+
+            else:
+                pass
+
+            if not path.exists(sgEntityName):
+                os.mkdir(sgEntityName)
+
+            else:
+                pass
+
+            if not path.exists(sgTaskName):
+                os.mkdir(sgTaskName)
+
+            else:
+                pass
+
+            if not path.exists(sgReferences):
+                os.mkdir(sgReferences)
+
+            else:
+                pass
+
+            if not path.isfile(emptyFile):
+                os.mknod(emptyFile)
+
+            return sgTaskName
 
 def main():
     app = QtGui.QApplication(sys.argv)
