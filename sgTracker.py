@@ -60,7 +60,8 @@ class ShotgunUtils():
         if not self.userId == None:
 
             filter = [['task_assignees', 'is', {'type': 'HumanUser', 'id': self.userId}],
-                      ['sg_status_list', 'is_not', 'fin']]
+                      ['sg_status_list', 'is_not', 'fin'], ['sg_status_list', 'is_not', 'apr'],
+                      ['sg_status_list', 'is_not', '']]
 
             fields = ['id']
 
@@ -325,7 +326,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
         '''timer'''
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.colorUpdate)
-        self.timer.setInterval(300000)
+        self.timer.setInterval(150000)
         ''' show window'''
         self.show()
 
