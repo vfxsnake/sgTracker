@@ -215,7 +215,7 @@ class ShotgunUtils():
         uploadedfile = self.sg.upload(entityType, entityId, filePath)
 
         if uploadedfile:
-            data = {'sg_type': tag, 'sg_type': 'REFERENCE'}
+            data = {'sg_type': tag, 'sg_type': 'REFERENCE', 'sg_taskid': taskId}
             self.sg.update('Attachment', uploadedfile, data)
 
             return uploadedfile
@@ -457,8 +457,6 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                 else:
                     pass
 
-
-
     def submitApproval(self):
 
         selection = self.taskTable.selectedItems()
@@ -502,7 +500,9 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                             attachment = self.sgUtils.uploadAttachment(int(cell.text()), str(f), 'SUBMIT')
 
                         if attachment:
+                            self.messageBox('Succes', "Uploaded files")
                             self.sgUtils.updateStatusFromUser(int(cell.text()), 'app')
+
                             self.task2Table()
                         else:
 
@@ -806,6 +806,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
                         attachment = self.sgUtils.uploadReference(lastNote['type'], lastNote['id'], f, 'REFERENCE',
                                                                   int(taskId.text()))
+                        self.messageBox('Succes', "upload completed")
 
                         if not attachment:
                             self.messageBox('Error', 'Fale to upload attachment')
