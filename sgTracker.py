@@ -376,7 +376,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                     entity = currentTask['entity']
                     entityType = QtGui.QTableWidgetItem(entity['type'])
                     entityName = QtGui.QTableWidgetItem(entity['name'])
-                    taskName = QtGui.QTableWidgetItem(currentTask['sg_displayname'])
+                    taskName = QtGui.QTableWidgetItem(currentTask['content'])
                     status = QtGui.QTableWidgetItem(currentTask['sg_status_list'])
                     priority = QtGui.QTableWidgetItem(currentTask['sg_priority_1'])
                     endDate = QtGui.QTableWidgetItem(currentTask['due_date'])
