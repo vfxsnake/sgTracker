@@ -210,7 +210,6 @@ class ShotgunUtils():
         else:
             return None
 
-
     def uploadReference(self, entityType, entityId, filePath, tag, taskId):
 
         uploadedfile = self.sg.upload(entityType, entityId, filePath)
@@ -418,10 +417,11 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
         if len(selection) > 1:
 
             self.messageBox('Warning', 'select One status Cell')
+            return None
 
         if not selection:
             self.messageBox('Warning', 'select One status Cell')
-
+            return None
         else:
 
             for select in selection:
@@ -452,11 +452,12 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                     else:
                         self.sgUtils.updateStatusFromUser(int(cell.text()), 'ip')
                         self.checkpath(row)
+                        self.task2Table()
 
                 else:
                     pass
 
-                self.task2Table()
+
 
     def submitApproval(self):
 
@@ -464,10 +465,12 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
         if len(selection) > 1:
             self.messageBox('Warning', 'select One status Cell')
+            return None
 
         if not selection:
 
             self.messageBox('Warning', 'select One status Cell')
+            return None
 
         else:
 
@@ -500,7 +503,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
                         if attachment:
                             self.sgUtils.updateStatusFromUser(int(cell.text()), 'app')
-
+                            self.task2Table()
                         else:
 
                             self.messageBox('Error', 'Fale to upload attachment')
@@ -511,8 +514,6 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
                 else:
                     self.messageBox('Warnig', 'the status is not In progress')
-
-            self.task2Table()
 
     def setProject(self):
 
@@ -658,6 +659,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
     def colorUpdate(self):
         self.updateButton.setStyleSheet('background-color : red')
         self.timer.stop()
+        self.updateButton.setDisabled(False)
 
     def setFlags(self):
 
@@ -795,7 +797,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
                 lastNote = notes[-1]
 
-                attachPath = self.checkpath()
+                attachPath = self.checkpath(index)
 
                 fname, x = QtGui.QFileDialog.getOpenFileNames(self, 'Open file', self.sgUtils.projectPath)
 
@@ -892,7 +894,8 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                 pass
 
             if not path.isfile(emptyFile):
-                os.mknod(emptyFile)
+                with open(emptyFile, 'w+'):
+                    pass
 
             return sgTaskName
 
