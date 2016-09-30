@@ -676,6 +676,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
         self.taskTable.setSortingEnabled(False)
         self.setStyleSheet('background-color: darkgray;')
         self.docUtils.NoteTextEdit.setFontPointSize(12)
+        self.docUtils.setProjectButton.setText('Set Project')
 
     def logIn(self):
 
