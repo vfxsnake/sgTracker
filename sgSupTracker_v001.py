@@ -196,19 +196,23 @@ class ShotgunUtils():
                 print 'no entity set'
                 return None
 
-    def downloadAttachment(self, taskId, downloadPath):
+    def downloadAttachment(self, taskId, downloadPath, parent=None):
 
         filters = [['sg_taskid', 'is', taskId], ['sg_type', 'is', 'REFERENCE']]
         fields = ['id', 'attachment_links', 'filename', 'created_at']
         attachments = self.sg.find('Attachment', filters, fields)
 
         if attachments:
+            progressBar = QtGui.QProgressBar(parent)
+            progressBar.show()
+            size = len(attachments)
+
             for x, attach in enumerate(attachments):
 
 
                     extension = path.splitext(attach['filename'])
-                    dt = attach['created_at'].isoformat()
-                    name = attach['attachment_links'][0]['name']
+                    dt = attach['created_at'].strftime("%Y_%m_%d_%H-%M-%S")
+                    name = attach['attachment_links'][0]['id']
 
                     namePadded = '{0}_{3}.{1:04d}{2}'.format(name, x, extension[-1], dt)
 
@@ -216,30 +220,41 @@ class ShotgunUtils():
 
                     dwFile = self.sg.download_attachment(attach, fullPath, attach['id'])
 
+                    progressBar.setValue(((x + 1)/size) * 100)
+
+            progressBar.close()
             return attachments
         else:
             return None
 
-    def downloadSubmitions(self, taskId, downloadPath):
+    def downloadSubmitions(self, taskId, downloadPath, parent=None):
 
         filters = [['sg_taskid', 'is', taskId], ['sg_type', 'is', 'SUBMIT']]
         fields = ['id', 'attachment_links', 'filename', 'created_at']
         attachments = self.sg.find('Attachment', filters, fields)
 
         if attachments:
+            progressBar = QtGui.QProgressBar(parent)
+            progressBar.show()
+
+            size = len(attachments)
+
             for x, attach in enumerate(attachments):
 
 
                     extension = path.splitext(attach['filename'])
-                    dt = attach['created_at'].isoformat()
+                    dt = attach['created_at'].strftime("%Y_%m_%d_%H-%M-%S")
                     name = attach['attachment_links'][0]['name']
 
                     namePadded = '{0}_{3}.{1:04d}{2}'.format(name, x, extension[-1], dt)
 
                     fullPath = path.join(downloadPath, namePadded)
 
-                    dwFile = self.sg.download_attachment(attach, fullPath, attach['id'])
+                    dwFile = self.sg.download_attachment(attach, fullPath)
+                    value = ((x+1)/float(size))*100
+                    progressBar.setValue(value)
 
+            progressBar.close()
             return attachments
         else:
             return None
@@ -943,7 +958,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                 taskPath = self.checkpath(index)
                 downPath = path.join(taskPath, 'SUBMITIONS')
 
-                attachs = self.sgUtils.downloadSubmitions(int(taskId.text()), downPath)
+                attachs = self.sgUtils.downloadSubmitions(int(taskId.text()), downPath, self)
 
                 if attachs:
                     self.messageBox('Succes', 'attachments compleated')
@@ -971,7 +986,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                 taskPath = self.checkpath(index)
                 downPath = path.join(taskPath, 'REFERENCES')
 
-                attachs = self.sgUtils.downloadAttachment(int(taskId.text()), downPath)
+                attachs = self.sgUtils.downloadAttachment(int(taskId.text()), downPath, self)
 
                 if attachs:
                     self.messageBox('Succes', 'attachments compleated')
@@ -1005,43 +1020,43 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
             emptyFile = path.join(sgTaskName, sgTask['entity']['name'])
 
             if not path.exists(project):
-                os.mkdir(project)
+                os.makedirs(project)
 
             else:
                 pass
 
             if not path.exists(sgProject):
-                os.mkdir(sgProject)
+                os.makedirs(sgProject)
 
             else:
                 pass
 
             if not path.exists(sgEntity):
-                os.mkdir(sgEntity)
+                os.makedirs(sgEntity)
 
             else:
                 pass
 
             if not path.exists(sgEntityName):
-                os.mkdir(sgEntityName)
+                os.makedirs(sgEntityName)
 
             else:
                 pass
 
             if not path.exists(sgTaskName):
-                os.mkdir(sgTaskName)
+                os.makedirs(sgTaskName)
 
             else:
                 pass
 
             if not path.exists(sgReferences):
-                os.mkdir(sgReferences)
+                os.makedirs(sgReferences)
 
             else:
                 pass
 
             if not path.exists(sgSubmitions):
-                os.mkdir(sgSubmitions)
+                os.makedirs(sgSubmitions)
 
             else:
                 pass
