@@ -193,13 +193,23 @@ class ShotgunUtils():
         fields = ['id', 'attachment_links', 'filename', 'created_at']
         attachments = self.sg.find('Attachment', filters, fields)
 
+    def downloadAttachment(self, taskId, downloadPath, parent=None):
+
+        filters = [['sg_taskid', 'is', taskId], ['sg_type', 'is', 'REFERENCE']]
+        fields = ['id', 'attachment_links', 'filename', 'created_at']
+        attachments = self.sg.find('Attachment', filters, fields)
+
         if attachments:
+            progressBar = QtGui.QProgressBar(parent)
+            progressBar.show()
+            size = len(attachments)
+
             for x, attach in enumerate(attachments):
 
 
                     extension = path.splitext(attach['filename'])
-                    dt = attach['created_at'].isoformat()
-                    name = attach['attachment_links'][0]['name']
+                    dt = attach['created_at'].strftime("%Y_%m_%d_%H-%M-%S")
+                    name = attach['attachment_links'][0]['id']
 
                     namePadded = '{0}_{3}.{1:04d}{2}'.format(name, x, extension[-1], dt)
 
@@ -207,6 +217,9 @@ class ShotgunUtils():
 
                     dwFile = self.sg.download_attachment(attach, fullPath, attach['id'])
 
+                    progressBar.setValue(((x + 1)/size) * 100)
+
+            progressBar.close()
             return attachments
         else:
             return None
