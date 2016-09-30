@@ -220,6 +220,30 @@ class ShotgunUtils():
         else:
             return None
 
+    def downloadSubmitions(self, taskId, downloadPath):
+
+        filters = [['sg_taskid', 'is', taskId], ['sg_type', 'is', 'SUBMIT']]
+        fields = ['id', 'attachment_links', 'filename', 'created_at']
+        attachments = self.sg.find('Attachment', filters, fields)
+
+        if attachments:
+            for x, attach in enumerate(attachments):
+
+
+                    extension = path.splitext(attach['filename'])
+                    dt = attach['created_at'].isoformat()
+                    name = attach['attachment_links'][0]['name']
+
+                    namePadded = '{0}_{3}.{1:04d}{2}'.format(name, x, extension[-1], dt)
+
+                    fullPath = path.join(downloadPath, namePadded)
+
+                    dwFile = self.sg.download_attachment(attach, fullPath, attach['id'])
+
+            return attachments
+        else:
+            return None
+
     def uploadReference(self, entityType, entityId, filePath, tag, taskId):
 
         uploadedfile = self.sg.upload(entityType, entityId, filePath)
@@ -329,7 +353,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
         self.docUtils.attachButton.setDisabled(True)
         self.docUtils.downloadButton.setDisabled(True)
         self.downloadSubmitionsButton.setDisabled(True)
-        self.statusButton.setDisabled(True)
+        #self.statusButton.setDisabled(True)
         self.updateButton.setDisabled(True)
 
 
@@ -354,8 +378,8 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
         self.updateButton.clicked.connect(self.task2Table)
         self.loginButton.clicked.connect(self.logIn)
-        self.downloadSubmitionsButton.clicked.connect(self.setInProgress)
-        self.statusButton.clicked.connect(self.submitApproval)
+        self.downloadSubmitionsButton.clicked.connect(self.downloadSubmitions)
+        self.statusButton.clicked.connect(self.updateStatus)
         self.docUtils.setProjectButton.clicked.connect(self.setProject)
         self.docUtils.replayButton.clicked.connect(self.replayNote)
         self.docUtils.attachButton.clicked.connect(self.uploadAttachments)
@@ -477,6 +501,76 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                 else:
                     pass
 
+    def updateStatus(self):
+
+        selection = self.taskTable.selectedItems()
+        if len(selection) > 1:
+
+            self.messageBox('Warning', 'select One status Cell')
+            return None
+
+        if not selection:
+            self.messageBox('Warning', 'select One status Cell')
+            return None
+        else:
+
+            for select in selection:
+                row = select.row()
+                status = self.taskTable.item(row, 3)
+
+                if (status.text() == 'cmpt' or status.text() == 'app'):
+
+                    cell = self.taskTable.item(row, 8)
+                    if status.text() == 'cmpt':
+
+                        msgBox = QtGui.QMessageBox()
+                        msgBox.setParent(self)
+                        msgBox.setStyleSheet('background-color : lightgrey')
+                        msgBox.setText("The task has been Competed.")
+                        msgBox.setInformativeText("Do you want to change the Staus?")
+                        msgBox.setStandardButtons(QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel)
+                        msgBox.setDefaultButton(QtGui.QMessageBox.Cancel)
+                        ret = msgBox.exec_()
+
+                        if ret == QtGui.QMessageBox.Cancel:
+                            return None
+
+
+                    retakeButton = QtGui.QPushButton('RETAKE')
+                    retakeButton.setStyleSheet('background-color : red')
+
+                    approveButton = QtGui.QPushButton('APPROVED')
+                    approveButton.setStyleSheet('background-color : green')
+
+                    completeButton = QtGui.QPushButton('COMPLETE')
+                    completeButton.setStyleSheet('background-color : lightgreen')
+
+                    cancelButton = QtGui.QPushButton('cancel')
+                    messageBox = QtGui.QMessageBox()
+                    messageBox.addButton(retakeButton, QtGui.QMessageBox.AcceptRole)
+                    messageBox.addButton(approveButton, QtGui.QMessageBox.AcceptRole)
+                    messageBox.addButton(completeButton, QtGui.QMessageBox.AcceptRole)
+                    messageBox.addButton(cancelButton, QtGui.QMessageBox.AcceptRole)
+
+                    messageBox.setText('Update to Status:')
+
+                    clicked = messageBox.exec_()
+
+                    if clicked == 0:
+                        self.sgUtils.updateStatusFromUser(int(cell.text()), 'rtk')
+
+                    elif clicked == 1:
+                        self.sgUtils.updateStatusFromUser(int(cell.text()), 'apr')
+
+                    elif clicked == 2:
+                        self.sgUtils.updateStatusFromUser(int(cell.text()), 'cmpt')
+
+                    else:
+                        return None
+
+                else:
+                    self.messageBox('Warning', 'task not submited for approval')
+                    return None
 
     def submitApproval(self):
 
@@ -688,6 +782,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
         self.taskTable.setSortingEnabled(False)
         self.setStyleSheet('background-color: darkgray;')
         self.docUtils.NoteTextEdit.setFontPointSize(12)
+        self.docUtils.setProjectButton.setText('Set Project')
 
     def logIn(self):
 
@@ -833,7 +928,33 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                         if not attachment:
                             self.messageBox('Error', 'Fale to upload attachment')
 
+    def downloadSubmitions(self):
 
+        rows = self.taskTable.selectionModel().selectedRows()
+
+        if len(rows) == 1:
+
+            for row in rows:
+
+                index = row.row()
+
+                taskId = self.taskTable.item(index, 8)
+
+                taskPath = self.checkpath(index)
+                downPath = path.join(taskPath, 'SUBMITIONS')
+
+                attachs = self.sgUtils.downloadSubmitions(int(taskId.text()), downPath)
+
+                if attachs:
+                    self.messageBox('Succes', 'attachments compleated')
+                    return attachs
+
+                else:
+                    self.messageBox('Warning', 'No attachmentes found')
+                    return None
+
+        else :
+            self.messageBox('Warnign', 'Select a Row')
 
     def downloadReff(self):
 
@@ -880,6 +1001,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
             sgEntityName = path.join(sgEntity, taskEntityName)
             sgTaskName = path.join(sgEntityName, taskName)
             sgReferences = path.join(sgTaskName, 'REFERENCES')
+            sgSubmitions = path.join(sgTaskName, 'SUBMITIONS')
             emptyFile = path.join(sgTaskName, sgTask['entity']['name'])
 
             if not path.exists(project):
@@ -914,6 +1036,12 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
             if not path.exists(sgReferences):
                 os.mkdir(sgReferences)
+
+            else:
+                pass
+
+            if not path.exists(sgSubmitions):
+                os.mkdir(sgSubmitions)
 
             else:
                 pass
