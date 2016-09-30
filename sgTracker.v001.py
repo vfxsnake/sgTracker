@@ -40,7 +40,7 @@ class ShotgunUtils():
     def getUserId(self, userName):
 
         filters = [['name', 'is', userName]]
-        field = ['id', 'name', 'sg_projectpath', 'sg_keyword']
+        field = ['id', 'name', 'sg_projectpath', 'sg_keyword', 'login']
 
         user = self.sg.find_one('HumanUser', filters, field)
 
@@ -155,7 +155,7 @@ class ShotgunUtils():
         if task:
 
             data = {'project': task['project'],
-                    'content': content, 'tasks': [task], 'user': self.userDic}
+                    'content': content, 'tasks': [task], 'user': self.userDic, 'subject' : 'Note'}
 
             note = self.sg.create('Note', data)
             return note['id']
@@ -187,11 +187,7 @@ class ShotgunUtils():
                 print 'no entity set'
                 return None
 
-    def downloadAttachment(self, taskId, downloadPath):
 
-        filters = [['sg_taskid', 'is', taskId], ['sg_type', 'is', 'REFERENCE']]
-        fields = ['id', 'attachment_links', 'filename', 'created_at']
-        attachments = self.sg.find('Attachment', filters, fields)
 
     def downloadAttachment(self, taskId, downloadPath, parent=None):
 
@@ -822,7 +818,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
                 attachPath = self.checkpath(index)
 
-                fname, x = QtGui.QFileDialog.getOpenFileNames(self, 'Open file', self.sgUtils.projectPath)
+                fname, x = QtGui.QFileDialog.getOpenFileNames(self, 'Open file', attachPath)
 
                 if fname:
                     for f in fname:
@@ -882,37 +878,37 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
             emptyFile = path.join(sgTaskName, sgTask['entity']['name'])
 
             if not path.exists(project):
-                os.mkdir(project)
+                os.makedirs(project)
 
             else:
                 pass
 
             if not path.exists(sgProject):
-                os.mkdir(sgProject)
+                os.makedirs(sgProject)
 
             else:
                 pass
 
             if not path.exists(sgEntity):
-                os.mkdir(sgEntity)
+                os.makedirs(sgEntity)
 
             else:
                 pass
 
             if not path.exists(sgEntityName):
-                os.mkdir(sgEntityName)
+                os.makedirs(sgEntityName)
 
             else:
                 pass
 
             if not path.exists(sgTaskName):
-                os.mkdir(sgTaskName)
+                os.makedirs(sgTaskName)
 
             else:
                 pass
 
             if not path.exists(sgReferences):
-                os.mkdir(sgReferences)
+                os.makedirs(sgReferences)
 
             else:
                 pass

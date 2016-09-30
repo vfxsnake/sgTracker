@@ -164,7 +164,7 @@ class ShotgunUtils():
         if task:
 
             data = {'project': task['project'],
-                    'content': content, 'tasks': [task], 'user': self.userDic}
+                    'content': content, 'tasks': [task], 'user': self.userDic, 'subject': 'Note'}
 
             note = self.sg.create('Note', data)
             return note['id']
@@ -930,7 +930,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
                 attachPath = self.checkpath(index)
 
-                fname, x = QtGui.QFileDialog.getOpenFileNames(self, 'Open file', self.sgUtils.projectPath)
+                fname, x = QtGui.QFileDialog.getOpenFileNames(self, 'Open file', attachPath)
 
 
                 if fname:
