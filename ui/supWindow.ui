@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1182</width>
+    <height>947</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <item>
+     <layout class="QVBoxLayout" name="logingTaskLay" stretch="0,1">
+      <property name="sizeConstraint">
+       <enum>QLayout::SetNoConstraint</enum>
+      </property>
+      <item>
+       <layout class="QHBoxLayout" name="logingLay">
+        <property name="sizeConstraint">
+         <enum>QLayout::SetNoConstraint</enum>
+        </property>
+        <item>
+         <widget class="QPushButton" name="loginButton">
+          <property name="text">
+           <string>Login</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="updateButton">
+          <property name="text">
+           <string>Update</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="taskLay">
+        <property name="sizeConstraint">
+         <enum>QLayout::SetNoConstraint</enum>
+        </property>
+        <item>
+         <widget class="QLabel" name="taskLabel">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>200</width>
+            <height>50</height>
+           </size>
+          </property>
+          <property name="font">
+           <font>
+            <pointsize>20</pointsize>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="layoutDirection">
+           <enum>Qt::LeftToRight</enum>
+          </property>
+          <property name="text">
+           <string>Current Tasks</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTableWidget" name="taskTable">
+          <column>
+           <property name="text">
+            <string>Entity</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Name</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Task Name</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Status</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Priority</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>DaysLeft</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>EndDate</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Complexity</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>id</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>User</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <property name="sizeConstraint">
+           <enum>QLayout::SetNoConstraint</enum>
+          </property>
+          <item>
+           <widget class="QPushButton" name="downloadSubmitionsButton">
+            <property name="text">
+             <string>downloadSubmitions</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="statusButton">
+            <property name="text">
+             <string>Update Status</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
