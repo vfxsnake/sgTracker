@@ -497,7 +497,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                         msgBox.setParent(self)
                         msgBox.setStyleSheet('background-color : lightgrey')
                         msgBox.setText("The task has been submitted for Approval.")
-                        msgBox.setInformativeText("Do you want to set to Inprogres?")
+                        msgBox.setInformativeText("Do you want to set to In Progress?")
                         msgBox.setStandardButtons(QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel)
                         msgBox.setDefaultButton(QtGui.QMessageBox.Cancel)
                         ret = msgBox.exec_()
@@ -542,7 +542,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                         msgBox.setParent(self)
                         msgBox.setStyleSheet('background-color : lightgrey')
                         msgBox.setText("The task has been Competed.")
-                        msgBox.setInformativeText("Do you want to change the Staus?")
+                        msgBox.setInformativeText("Do you want to change the Status?")
                         msgBox.setStandardButtons(QtGui.QMessageBox.Yes | QtGui.QMessageBox.Cancel)
                         msgBox.setDefaultButton(QtGui.QMessageBox.Cancel)
                         ret = msgBox.exec_()
@@ -584,7 +584,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                         return None
 
                 else:
-                    self.messageBox('Warning', 'task not submited for approval')
+                    self.messageBox('Warning', 'task not submitted for approval')
                     return None
 
     def submitApproval(self):
@@ -613,13 +613,14 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
                     if status.text() == 'app':
                         msgBox = QtGui.QMessageBox()
-                        text = "the task has been submitted for Aproval. " \
-                               "If you want to add more Atachmentes select the files, if not close the browser."
+                        text = "the task has been submitted for Approval. " \
+                               "If you want to add more Attachments select the files, if not close the browser."
 
                         self.messageBox('Warning', text)
 
                     taskPath = self.checkpath(row)
                     fname, x = QtGui.QFileDialog.getOpenFileNames(self, 'Open file', taskPath)
+                    QtGui.QFileDialog.getOpenFileNames()
 
                     if fname:
 
@@ -630,7 +631,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                             attachment = self.sgUtils.uploadAttachment(int(cell.text()), str(f), 'SUBMIT')
 
                         if attachment:
-                            self.messageBox('Succes', "Uploaded files")
+                            self.messageBox('Success', "Uploaded files")
                             self.sgUtils.updateStatusFromUser(int(cell.text()), 'app')
 
                             self.task2Table()
@@ -660,7 +661,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
             self.docUtils.setProjectButton.setDisabled(True)
         else:
 
-            self.messageBox('Warnig','No folder Selected')
+            self.messageBox('Warning','No folder Selected')
 
     def projectStructure(self, userPath):
 
@@ -673,7 +674,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
             os.mkdir(hcProjectFolder)
             print 'Project Created'
         else:
-            print 'Project Allready exist'
+            print 'Project Already exist'
 
         self.projectPath = hcProjectFolder
 
@@ -725,6 +726,9 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
         elif sgStatus == 'rtk':
             color = QtGui.QColor(230, 10, 0)
+
+        elif sgStatus == 'apr':
+            color = QtGui.QColor(50, 250, 255)
 
         else:
             color = QtGui.QColor('white')
@@ -798,6 +802,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
         self.setStyleSheet('background-color: darkgray;')
         self.docUtils.NoteTextEdit.setFontPointSize(12)
         self.docUtils.setProjectButton.setText('Set Project')
+        self.docUtils.replayButton.setText('Reply Note')
 
     def logIn(self):
 
@@ -941,7 +946,9 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                                                                   int(taskId.text()))
 
                         if not attachment:
-                            self.messageBox('Error', 'Fale to upload attachment')
+                            self.messageBox('Error', 'Fail to upload attachment')
+                            return None
+                    self.messageBox('Success', 'Files successfully Uploaded')
 
     def downloadSubmitions(self):
 
@@ -961,15 +968,15 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                 attachs = self.sgUtils.downloadSubmitions(int(taskId.text()), downPath, self)
 
                 if attachs:
-                    self.messageBox('Succes', 'attachments compleated')
+                    self.messageBox('Success', 'attachments complete')
                     return attachs
 
                 else:
-                    self.messageBox('Warning', 'No attachmentes found')
+                    self.messageBox('Warning', 'No attachments found')
                     return None
 
         else :
-            self.messageBox('Warnign', 'Select a Row')
+            self.messageBox('Warning', 'Select a Row')
 
     def downloadReff(self):
 
@@ -989,11 +996,11 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                 attachs = self.sgUtils.downloadAttachment(int(taskId.text()), downPath, self)
 
                 if attachs:
-                    self.messageBox('Succes', 'attachments compleated')
+                    self.messageBox('Success', 'attachments complete')
                     return attachs
 
                 else:
-                    self.messageBox('Warning', 'No attachmentes found')
+                    self.messageBox('Warning', 'No attachments found')
                     return None
 
     def checkpath(self, row):
