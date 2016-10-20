@@ -84,7 +84,6 @@ class ShotgunUtils():
         data = {'name': sgName, 'sg_status': 'Active', 'sg_type': 'Feature'}
         fields = ['id']
         project = self.sg.create('Project', data, fields)
-        print project
         return project
 
     def createSequence(self, projectID, sqName):
