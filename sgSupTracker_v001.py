@@ -73,7 +73,8 @@ class ShotgunUtils():
                       ['sg_status_list', 'is_not', 'fin'], ['sg_status_list', 'is_not', 'cmpt']]
 
             fields = ['id', 'content', 'sg_status_list', 'start_date', 'due_date', 'sg_complexity',
-                  'sg_priority_1', 'sg_note', 'project', 'entity', 'sg_digitalmedia', 'sg_displayname']
+                      'sg_priority_1', 'sg_note', 'project', 'entity', 'sg_digitalmedia', 'sg_displayname',
+                      'task_assignees']
 
             order = [{'field_name': 'due_date', 'direction': 'asc'},
                      {'field_name': 'sg_priority_1', 'direction': 'asc'},
@@ -104,7 +105,8 @@ class ShotgunUtils():
         filter = [['id', 'is', taskId]]
 
         fields = ['id', 'content', 'sg_status_list', 'start_date', 'due_date', 'sg_complexity',
-                  'sg_priority_1', 'sg_note', 'project', 'entity', 'sg_digitalmedia', 'sg_displayname']
+                  'sg_priority_1', 'sg_note', 'project', 'entity', 'sg_digitalmedia', 'sg_displayname',
+                  'task_assignees']
 
         task = self.sg.find_one('Task', filter, fields)
 
@@ -259,6 +261,38 @@ class ShotgunUtils():
         else:
             return None
 
+    def downloadDelivery(self, taskId, downloadPath, parent=None):
+
+        filters = [['sg_taskid', 'is', taskId], ['sg_type', 'is', 'DELIVERY']]
+        fields = ['id', 'attachment_links', 'filename', 'created_at']
+        attachments = self.sg.find('Attachment', filters, fields)
+
+        if attachments:
+            progressBar = QtGui.QProgressBar(parent)
+            progressBar.show()
+
+            size = len(attachments)
+
+            for x, attach in enumerate(attachments):
+
+
+                    extension = path.splitext(attach['filename'])
+                    dt = attach['created_at'].strftime("%Y_%m_%d_%H-%M-%S")
+                    name = attach['attachment_links'][0]['name']
+
+                    namePadded = '{0}_{3}.{1:04d}{2}'.format(name, x, extension[-1], dt)
+
+                    fullPath = path.join(downloadPath, namePadded)
+
+                    dwFile = self.sg.download_attachment(attach, fullPath)
+                    value = ((x+1)/float(size))*100
+                    progressBar.setValue(value)
+
+            progressBar.close()
+            return attachments
+        else:
+            return None
+
     def uploadReference(self, entityType, entityId, filePath, tag, taskId):
 
         uploadedfile = self.sg.upload(entityType, entityId, filePath)
@@ -361,7 +395,6 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
         self.docUtils.setAllowedAreas(QtCore.Qt.RightDockWidgetArea)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.docUtils)
 
-
         ''' disble buttons'''
         self.docUtils.setProjectButton.setDisabled(True)
         self.docUtils.replayButton.setDisabled(True)
@@ -399,6 +432,8 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
         self.docUtils.replayButton.clicked.connect(self.replayNote)
         self.docUtils.attachButton.clicked.connect(self.uploadAttachments)
         self.docUtils.downloadButton.clicked.connect(self.downloadReff)
+        self.taskDelivery_pushButton.clicked.connect(self.submitDelivery)
+        self.getDelivery.clicked.connect(self.downloadDelivers)
 
         '''Qtable change selection signal'''
         model = self.taskTable.selectionModel()
@@ -424,7 +459,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
             self.taskTable.setRowCount(size)
 
             self.progressBar.show()
-
+            self.taskTable.setSortingEnabled(False)
             for x, task in enumerate(self.sgUtils.tasks):
                 currentTask = task
 
@@ -440,6 +475,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                     endDate = QtGui.QTableWidgetItem(currentTask['due_date'])
                     complex = QtGui.QTableWidgetItem(currentTask['sg_complexity'])
                     sgId = QtGui.QTableWidgetItem(str(currentTask['id']))
+                    user = QtGui.QTableWidgetItem(self.pruneUser(currentTask['task_assignees']))
                     timeLeft = QtGui.QTableWidgetItem(self.deltaTime(currentTask['due_date']))
                     entityType.setBackground(self.colorFromEntity(entity['type']))
                     entityName.setBackground(self.colorFromEntity(entity['type']))
@@ -460,8 +496,14 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                     self.taskTable.setItem(x, 6, endDate)
                     self.taskTable.setItem(x, 7, complex)
                     self.taskTable.setItem(x, 8, sgId)
+                    self.taskTable.setItem(x, 9, user)
+
+
+
 
                     self.progressBar.setValue(x)
+
+            self.taskTable.setSortingEnabled(True)
 
             self.timer.start()
             self.updateButton.setStyleSheet('background-color : lightgreen')
@@ -469,6 +511,17 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
         else:
             self.messageBox('Warning', 'No Task Assigned jet')
             self.taskTable.setRowCount(0)
+
+    def pruneUser(self, userList):
+        userName = ''
+        for user in userList:
+
+            if (user['name'] == 'Art Supervisor' or user['name'] == 'Jacive Lopez'):
+                pass
+            else:
+                userName = user['name']
+
+        return userName
 
     def setInProgress(self):
 
@@ -587,7 +640,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                     self.messageBox('Warning', 'task not submitted for approval')
                     return None
 
-    def submitApproval(self):
+    def submitDelivery(self):
 
         selection = self.taskTable.selectedItems()
 
@@ -606,17 +659,10 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                 row = select.row()
                 status = self.taskTable.item(row, 3)
 
-                if status.text() == 'ip' or select.text() == 'app':
+                if status.text() == 'apr' or select.text() == 'cmpt':
 
                     cell = self.taskTable.item(row, 8)
                     attachment = None
-
-                    if status.text() == 'app':
-                        msgBox = QtGui.QMessageBox()
-                        text = "the task has been submitted for Approval. " \
-                               "If you want to add more Attachments select the files, if not close the browser."
-
-                        self.messageBox('Warning', text)
 
                     taskPath = self.checkpath(row)
                     fname, x = QtGui.QFileDialog.getOpenFileNames(self, 'Open file', taskPath)
@@ -628,11 +674,11 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
                         for f in fname:
 
-                            attachment = self.sgUtils.uploadAttachment(int(cell.text()), str(f), 'SUBMIT')
+                            attachment = self.sgUtils.uploadAttachment(int(cell.text()), str(f), 'DELIVERY')
 
                         if attachment:
                             self.messageBox('Success', "Uploaded files")
-                            self.sgUtils.updateStatusFromUser(int(cell.text()), 'app')
+                            #self.sgUtils.updateStatusFromUser(int(cell.text()), 'app')
 
                             self.task2Table()
                         else:
@@ -978,6 +1024,35 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
         else :
             self.messageBox('Warning', 'Select a Row')
 
+    def downloadDelivers(self):
+
+        rows = self.taskTable.selectionModel().selectedRows()
+
+        if len(rows) == 1:
+
+            for row in rows:
+
+                index = row.row()
+
+                taskId = self.taskTable.item(index, 8)
+
+                taskPath = self.checkpath(index)
+                downPath = path.join(taskPath, 'DELIVERY')
+
+                attachs = self.sgUtils.downloadDelivery(int(taskId.text()), downPath, self)
+
+                if attachs:
+                    self.messageBox('Success', 'attachments complete')
+                    return attachs
+
+                else:
+                    self.messageBox('Warning', 'No attachments found')
+                    return None
+
+        else :
+            self.messageBox('Warning', 'Select a Row')
+
+
     def downloadReff(self):
 
         rows = self.taskTable.selectionModel().selectedRows()
@@ -1024,6 +1099,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
             sgTaskName = path.join(sgEntityName, taskName)
             sgReferences = path.join(sgTaskName, 'REFERENCES')
             sgSubmitions = path.join(sgTaskName, 'SUBMITIONS')
+            sgDelivery = path.join(sgTaskName, 'DELIVERY')
             emptyFile = path.join(sgTaskName, sgTask['entity']['name'])
 
             if not path.exists(project):
@@ -1064,6 +1140,12 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
             if not path.exists(sgSubmitions):
                 os.makedirs(sgSubmitions)
+
+            else:
+                pass
+
+            if not path.exists(sgDelivery):
+                os.makedirs(sgDelivery)
 
             else:
                 pass
