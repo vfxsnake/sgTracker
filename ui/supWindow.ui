@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1182</width>
-    <height>947</height>
+    <width>1293</width>
+    <height>1014</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -142,6 +142,26 @@
            <widget class="QPushButton" name="statusButton">
             <property name="text">
              <string>Update Status</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="taskDelivery_pushButton">
+            <property name="text">
+             <string>task Delivery</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="getDelivery">
+            <property name="maximumSize">
+             <size>
+              <width>150</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>get Delivery</string>
             </property>
            </widget>
           </item>

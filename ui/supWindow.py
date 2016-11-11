@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'supWindow.ui'
 #
-# Created: Thu Sep 29 17:51:56 2016
+# Created: Thu Nov 10 19:22:51 2016
 #      by: pyside-uic 0.2.15 running on PySide 1.2.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -12,7 +12,7 @@ from PySide import QtCore, QtGui
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1182, 947)
+        MainWindow.resize(1293, 1014)
         self.centralwidget = QtGui.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.horizontalLayout = QtGui.QHBoxLayout(self.centralwidget)
@@ -78,6 +78,13 @@ class Ui_MainWindow(object):
         self.statusButton = QtGui.QPushButton(self.centralwidget)
         self.statusButton.setObjectName("statusButton")
         self.horizontalLayout_3.addWidget(self.statusButton)
+        self.taskDelivery_pushButton = QtGui.QPushButton(self.centralwidget)
+        self.taskDelivery_pushButton.setObjectName("taskDelivery_pushButton")
+        self.horizontalLayout_3.addWidget(self.taskDelivery_pushButton)
+        self.getDelivery = QtGui.QPushButton(self.centralwidget)
+        self.getDelivery.setMaximumSize(QtCore.QSize(150, 16777215))
+        self.getDelivery.setObjectName("getDelivery")
+        self.horizontalLayout_3.addWidget(self.getDelivery)
         self.taskLay.addLayout(self.horizontalLayout_3)
         self.logingTaskLay.addLayout(self.taskLay)
         self.logingTaskLay.setStretch(1, 1)
@@ -104,4 +111,6 @@ class Ui_MainWindow(object):
         self.taskTable.horizontalHeaderItem(9).setText(QtGui.QApplication.translate("MainWindow", "User", None, QtGui.QApplication.UnicodeUTF8))
         self.downloadSubmitionsButton.setText(QtGui.QApplication.translate("MainWindow", "downloadSubmitions", None, QtGui.QApplication.UnicodeUTF8))
         self.statusButton.setText(QtGui.QApplication.translate("MainWindow", "Update Status", None, QtGui.QApplication.UnicodeUTF8))
+        self.taskDelivery_pushButton.setText(QtGui.QApplication.translate("MainWindow", "task Delivery", None, QtGui.QApplication.UnicodeUTF8))
+        self.getDelivery.setText(QtGui.QApplication.translate("MainWindow", "get Delivery", None, QtGui.QApplication.UnicodeUTF8))
 
