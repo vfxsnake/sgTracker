@@ -391,6 +391,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                     taskName = QtGui.QTableWidgetItem(currentTask['content'])
                     status = QtGui.QTableWidgetItem(currentTask['sg_status_list'])
                     priority = QtGui.QTableWidgetItem(currentTask['sg_priority_1'])
+                    startDate = QtGui.QTableWidgetItem(currentTask['start_date'])
                     endDate = QtGui.QTableWidgetItem(currentTask['due_date'])
                     complex = QtGui.QTableWidgetItem(currentTask['sg_complexity'])
                     sgId = QtGui.QTableWidgetItem(str(currentTask['id']))
@@ -413,9 +414,10 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                     self.taskTable.setItem(x, 3, status)
                     self.taskTable.setItem(x, 4, priority)
                     self.taskTable.setItem(x, 5, timeLeft)
-                    self.taskTable.setItem(x, 6, endDate)
-                    self.taskTable.setItem(x, 7, complex)
-                    self.taskTable.setItem(x, 8, sgId)
+                    self.taskTable.setItem(x, 6, startDate)
+                    self.taskTable.setItem(x, 7, endDate)
+                    self.taskTable.setItem(x, 8, complex)
+                    self.taskTable.setItem(x, 9, sgId)
 
                     self.progressBar.setValue(x)
 
@@ -446,7 +448,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                 if not (status.text() == 'hld' or select.text() == 'fin' or select.text() == 'ip'):
 
 
-                    cell = self.taskTable.item(row, 8)
+                    cell = self.taskTable.item(row, 9)
                     if status.text() == 'app':
 
                         msgBox = QtGui.QMessageBox()
@@ -493,7 +495,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
                 if status.text() == 'ip' or select.text() == 'app':
 
-                    cell = self.taskTable.item(row, 8)
+                    cell = self.taskTable.item(row, 9)
                     attachment = None
 
                     if status.text() == 'app':
@@ -508,7 +510,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
                     if fname:
 
-                        cell = self.taskTable.item(row, 8)
+                        cell = self.taskTable.item(row, 9)
 
                         for f in fname:
 
@@ -730,7 +732,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
         row = taskIndex
 
-        item = self.taskTable.item(row, 8)
+        item = self.taskTable.item(row, 9)
 
         notes = self.sgUtils.getNotes(int(item.text()))
 
@@ -771,7 +773,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
                     index = row.row()
 
-                    task = self.taskTable.item(index, 8)
+                    task = self.taskTable.item(index, 9)
 
                     taskId = int(task.text())
 
@@ -808,7 +810,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
                 index = row.row()
 
-                taskId = self.taskTable.item(index, 8)
+                taskId = self.taskTable.item(index, 9)
 
                 notes = self.sgUtils.getNotes(int(taskId.text()))
 
@@ -841,7 +843,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
                 index = row.row()
 
-                taskId = self.taskTable.item(index, 8)
+                taskId = self.taskTable.item(index, 9)
 
                 taskPath = self.checkpath(index)
                 downPath = path.join(taskPath, 'REFERENCES')
@@ -863,7 +865,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
             project = self.projectPath
 
-            taskId = int(self.taskTable.item(row, 8).text())
+            taskId = int(self.taskTable.item(row, 9).text())
             taskEntity = self.taskTable.item(row, 0).text()
             taskEntityName = self.taskTable.item(row, 1).text()
             taskName = self.taskTable.item(row, 2).text()
