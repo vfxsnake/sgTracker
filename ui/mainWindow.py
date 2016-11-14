@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'mainWindow.ui'
 #
-# Created: Thu Sep 22 18:51:20 2016
+# Created: Mon Nov 14 14:17:46 2016
 #      by: pyside-uic 0.2.15 running on PySide 1.2.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -12,7 +12,7 @@ from PySide import QtCore, QtGui
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(979, 903)
+        MainWindow.resize(1279, 1204)
         self.centralwidget = QtGui.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.horizontalLayout = QtGui.QHBoxLayout(self.centralwidget)
@@ -46,7 +46,7 @@ class Ui_MainWindow(object):
         self.taskLay.addWidget(self.taskLabel)
         self.taskTable = QtGui.QTableWidget(self.centralwidget)
         self.taskTable.setObjectName("taskTable")
-        self.taskTable.setColumnCount(9)
+        self.taskTable.setColumnCount(10)
         self.taskTable.setRowCount(0)
         item = QtGui.QTableWidgetItem()
         self.taskTable.setHorizontalHeaderItem(0, item)
@@ -66,6 +66,8 @@ class Ui_MainWindow(object):
         self.taskTable.setHorizontalHeaderItem(7, item)
         item = QtGui.QTableWidgetItem()
         self.taskTable.setHorizontalHeaderItem(8, item)
+        item = QtGui.QTableWidgetItem()
+        self.taskTable.setHorizontalHeaderItem(9, item)
         self.taskLay.addWidget(self.taskTable)
         self.horizontalLayout_3 = QtGui.QHBoxLayout()
         self.horizontalLayout_3.setSizeConstraint(QtGui.QLayout.SetNoConstraint)
@@ -96,9 +98,10 @@ class Ui_MainWindow(object):
         self.taskTable.horizontalHeaderItem(3).setText(QtGui.QApplication.translate("MainWindow", "Status", None, QtGui.QApplication.UnicodeUTF8))
         self.taskTable.horizontalHeaderItem(4).setText(QtGui.QApplication.translate("MainWindow", "Priority", None, QtGui.QApplication.UnicodeUTF8))
         self.taskTable.horizontalHeaderItem(5).setText(QtGui.QApplication.translate("MainWindow", "DaysLeft", None, QtGui.QApplication.UnicodeUTF8))
-        self.taskTable.horizontalHeaderItem(6).setText(QtGui.QApplication.translate("MainWindow", "EndDate", None, QtGui.QApplication.UnicodeUTF8))
-        self.taskTable.horizontalHeaderItem(7).setText(QtGui.QApplication.translate("MainWindow", "Complexity", None, QtGui.QApplication.UnicodeUTF8))
-        self.taskTable.horizontalHeaderItem(8).setText(QtGui.QApplication.translate("MainWindow", "id", None, QtGui.QApplication.UnicodeUTF8))
+        self.taskTable.horizontalHeaderItem(6).setText(QtGui.QApplication.translate("MainWindow", "StartDate", None, QtGui.QApplication.UnicodeUTF8))
+        self.taskTable.horizontalHeaderItem(7).setText(QtGui.QApplication.translate("MainWindow", "EndDate", None, QtGui.QApplication.UnicodeUTF8))
+        self.taskTable.horizontalHeaderItem(8).setText(QtGui.QApplication.translate("MainWindow", "Complexity", None, QtGui.QApplication.UnicodeUTF8))
+        self.taskTable.horizontalHeaderItem(9).setText(QtGui.QApplication.translate("MainWindow", "id", None, QtGui.QApplication.UnicodeUTF8))
         self.inprogressButton.setText(QtGui.QApplication.translate("MainWindow", "Set In Progress", None, QtGui.QApplication.UnicodeUTF8))
         self.apprubalButton.setText(QtGui.QApplication.translate("MainWindow", "Submit for Approval", None, QtGui.QApplication.UnicodeUTF8))
 
