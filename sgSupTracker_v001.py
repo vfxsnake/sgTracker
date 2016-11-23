@@ -69,8 +69,10 @@ class ShotgunUtils():
 
         if not self.userId == None:
 
-            filter = [['task_assignees', 'is', {'type': 'HumanUser', 'id': self.userId}],
-                      ['sg_status_list', 'is_not', 'fin'], ['sg_status_list', 'is_not', 'cmpt']]
+            # filter = [['task_assignees', 'is', {'type': 'HumanUser', 'id': self.userId}],
+            #           ['sg_status_list', 'is_not', 'fin'], ['sg_status_list', 'is_not', 'cmpt']]
+
+            filter = [['task_assignees', 'is', {'type': 'HumanUser', 'id': self.userId}]]
 
             fields = ['id', 'content', 'sg_status_list', 'start_date', 'due_date', 'sg_complexity',
                       'sg_priority_1', 'sg_note', 'project', 'entity', 'sg_digitalmedia', 'sg_displayname',
