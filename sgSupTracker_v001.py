@@ -65,14 +65,17 @@ class ShotgunUtils():
             print "no {0} User found ".format(userName)
             return None
 
-    def taskByUser(self):
+    def taskByUser(self, sgfilters=None):
 
         if not self.userId == None:
 
-            # filter = [['task_assignees', 'is', {'type': 'HumanUser', 'id': self.userId}],
-            #           ['sg_status_list', 'is_not', 'fin'], ['sg_status_list', 'is_not', 'cmpt']]
+
 
             filter = [['task_assignees', 'is', {'type': 'HumanUser', 'id': self.userId}]]
+
+            if sgfilters:
+                for filters in sgfilters:
+                    filter.append(filters)
 
             fields = ['id', 'content', 'sg_status_list', 'start_date', 'due_date', 'sg_complexity',
                       'sg_priority_1', 'sg_note', 'project', 'entity', 'sg_digitalmedia', 'sg_displayname',
@@ -446,8 +449,19 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
         self.taskTable.verticalHeader().sectionClicked.connect(self.displayNotes)
 
     def task2Table(self):
+        filters = []
+        if self.hideRdy_checkBox.isChecked():
+            filters.append(['sg_status_list', 'is_not', 'rdycd '])
+        if self.hideIp_checkBox.isChecked():
+            filters.append( ['sg_status_list', 'is_not', 'ip'])
+        if self.hideCmpt_checkBox.isChecked():
+            filters.append(['sg_status_list', 'is_not', 'cmpt'])
+        if self.hideApr_checkBox.isChecked():
+            filters.append(['sg_status_list', 'is_not', 'apr'])
+        if self.hideDeliver_checkBox.isChecked():
+            filters.append(['sg_status_list', 'is_not', 'dlvr'])
 
-        self.sgUtils.taskByUser()
+        self.sgUtils.taskByUser(filters)
 
 
         if not self.taskTable.rowCount() == 0:
@@ -680,7 +694,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
                         if attachment:
                             self.messageBox('Success', "Uploaded files")
-                            #self.sgUtils.updateStatusFromUser(int(cell.text()), 'app')
+                            self.sgUtils.updateStatusFromUser(int(cell.text()),'dlvr')
 
                             self.task2Table()
                         else:
@@ -777,6 +791,9 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
         elif sgStatus == 'apr':
             color = QtGui.QColor(50, 250, 255)
+
+        elif sgStatus == 'cmpt':
+            color = QtGui.QColor(0, 100, 0)
 
         else:
             color = QtGui.QColor('white')
