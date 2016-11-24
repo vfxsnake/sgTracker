@@ -451,7 +451,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
     def task2Table(self):
         filters = []
         if self.hideRdy_checkBox.isChecked():
-            filters.append(['sg_status_list', 'is_not', 'rdycd '])
+            filters.append(['sg_status_list', 'is_not', 'rdy'])
         if self.hideIp_checkBox.isChecked():
             filters.append( ['sg_status_list', 'is_not', 'ip'])
         if self.hideCmpt_checkBox.isChecked():
