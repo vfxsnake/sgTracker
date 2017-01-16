@@ -532,7 +532,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
         userName = ''
         for user in userList:
 
-            if (user['name'] == 'Art Supervisor' or user['name'] == 'Jacive Lopez'):
+            if (user['name'] == 'Art Supervisor' or user['name'] == 'Jacive Lopez' or user['name']=='storyboard Supervisor' or user['name']=='Direction assistant'):
                 pass
             else:
                 userName = user['name']
@@ -1056,7 +1056,9 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                 taskId = self.taskTable.item(index, 8)
 
                 taskPath = self.checkpath(index)
+
                 downPath = path.join(taskPath, 'DELIVERY')
+
 
                 attachs = self.sgUtils.downloadDelivery(int(taskId.text()), downPath, self)
 
