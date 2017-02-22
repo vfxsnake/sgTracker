@@ -682,7 +682,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
 
                     taskPath = self.checkpath(row)
                     fname, x = QtGui.QFileDialog.getOpenFileNames(self, 'Open file', taskPath)
-                    QtGui.QFileDialog.getOpenFileNames()
+                    #QtGui.QFileDialog.getOpenFileNames()
 
                     if fname:
 
@@ -696,7 +696,7 @@ class sgTracker(QtGui.QMainWindow, Ui_MainWindow):
                             self.messageBox('Success', "Uploaded files")
                             self.sgUtils.updateStatusFromUser(int(cell.text()),'dlvr')
 
-                            self.task2Table()
+                            #self.task2Table()
                         else:
 
                             self.messageBox('Error', 'Fale to upload attachment')
