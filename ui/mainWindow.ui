@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>979</width>
-    <height>903</height>
+    <width>1279</width>
+    <height>1204</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -102,6 +102,11 @@
           <column>
            <property name="text">
             <string>DaysLeft</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>StartDate</string>
            </property>
           </column>
           <column>
